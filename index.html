@@ -999,7 +999,18 @@ html&gt;body{padding:0}&lt;/style&gt;
     heart: v =&gt; `${v}%`, resp: v =&gt; `${v}%`, noise: v =&gt; `${v}%`, lambda: v =&gt; `${(v / 100).toFixed(2)}`
   };
 
-  function css(name) { return getComputedStyle(root).getPropertyValue(name).trim(); }
+  // Canvas does not consistently accept unresolved modern CSS functions such
+  // as light-dark() and color-mix(). Resolve each theme token through a real
+  // element first so the drawing contexts always receive a concrete rgb/rgba
+  // color instead of silently falling back to black.
+  const colorProbe = document.createElement(&#x27;span&#x27;);
+  colorProbe.setAttribute(&#x27;aria-hidden&#x27;, &#x27;true&#x27;);
+  colorProbe.style.cssText = &#x27;position:absolute;visibility:hidden;pointer-events:none&#x27;;
+  root.appendChild(colorProbe);
+  function css(name) {
+    colorProbe.style.color = `var(${name})`;
+    return getComputedStyle(colorProbe).color;
+  }
   function sizeCanvas(canvas, context) {
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
     const rect = canvas.getBoundingClientRect();
